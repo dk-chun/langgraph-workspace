@@ -1,0 +1,14 @@
+{
+    "dependencies": [
+        "langchain_openai",
+        "langchain_ollama",
+        "langchain_community",
+        "./my_agent"
+    ],
+    "graphs": {
+        "my_agent": "./my_agent/agent.py:agent",
+        "rag_agent": "./my_agent/rag_agent.py:rag_agent",
+        "basic_agent": "./my_agent/basic_agent.py:basic_agent"
+    },
+    "env": "./.env"
+} 
