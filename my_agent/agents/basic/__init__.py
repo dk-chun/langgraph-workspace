@@ -1,9 +1,9 @@
 """
-Basic prompting agent implementation.
+Basic agent implementation.
 """
 
-from .agent import BasicAgent, create_basic_agent
-from .state import BasicState
-from .nodes import BasicPromptNode
+from .basic_agent import BasicAgent
+from .coordinator import BasicCoordinator
+from .service import BasicService
 
-__all__ = ["BasicAgent", "create_basic_agent", "BasicState", "BasicPromptNode"] 
+__all__ = ["BasicAgent", "BasicCoordinator", "BasicService"] 

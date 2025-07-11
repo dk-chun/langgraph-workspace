@@ -1,14 +1,13 @@
 {
     "dependencies": [
-        "langchain_openai",
         "langchain_ollama",
-        "langchain_community",
-        "./my_agent"
+        "langchain_core",
+        "langgraph",
+        "pydantic",
+        "."
     ],
     "graphs": {
-        "my_agent": "./my_agent/agent.py:agent",
-        "rag_agent": "./my_agent/rag_agent.py:rag_agent",
-        "basic_agent": "./my_agent/basic_agent.py:basic_agent"
+        "basic_agent": "./my_agent/basic_agent.py:create_basic_agent_graph"
     },
     "env": "./.env"
 } 

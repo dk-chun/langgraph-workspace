@@ -1,11 +1,21 @@
 """
-LangGraph Multi-Agent Package
+My Agent Package - Modular LangGraph Agent Services
 
-This package contains multiple agent implementations and core functionality.
+This package provides independent agent services that can be deployed separately:
+- Basic Agent: General purpose conversational service using Private State pattern
+
+Each service is designed to work independently and can be deployed on LangGraph server.
 """
 
-from .agents import OpenAIAgent, RAGAgent, BasicAgent
-from .core import BaseState, BaseNode, AgentInterface
+from my_agent.basic_agent import create_basic_agent, create_basic_coordinator, create_basic_service
 
-__version__ = "0.2.0"
-__all__ = ["OpenAIAgent", "RAGAgent", "BasicAgent", "BaseState", "BaseNode", "AgentInterface"] 
+# Service factories
+__all__ = [
+    "create_basic_agent",
+    "create_basic_coordinator", 
+    "create_basic_service"
+]
+
+# Version information
+__version__ = "2.0.0"
+__author__ = "LangGraph Agent Services" 

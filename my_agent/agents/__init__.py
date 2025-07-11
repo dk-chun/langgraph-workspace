@@ -1,9 +1,16 @@
 """
-Agent implementations package.
+Agent Services Package
+
+Contains independent agent services that can be deployed separately:
+- basic: General purpose conversational service using Private State pattern
+
+Each service is self-contained and can be deployed independently on LangGraph server.
 """
 
-from .openai.agent import OpenAIAgent
-from .rag.agent import RAGAgent
-from .basic.agent import BasicAgent
+from .basic import BasicAgent, BasicCoordinator, BasicService
 
-__all__ = ["OpenAIAgent", "RAGAgent", "BasicAgent"] 
+__all__ = [
+    "BasicAgent", 
+    "BasicCoordinator",
+    "BasicService"
+] 
