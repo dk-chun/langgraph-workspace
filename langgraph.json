@@ -7,7 +7,7 @@
         "."
     ],
     "graphs": {
-        "basic_agent": "./my_agent/basic_agent.py:create_basic_agent_graph"
+        "basic_agent": "./my_agent/agents/basic/agent.py:create_basic_agent"
     },
     "env": "./.env"
 } 

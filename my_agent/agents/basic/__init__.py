@@ -2,8 +2,6 @@
 Basic agent implementation.
 """
 
-from .basic_agent import BasicAgent
-from .coordinator import BasicCoordinator
-from .service import BasicService
+from .agent import create_basic_agent
 
-__all__ = ["BasicAgent", "BasicCoordinator", "BasicService"] 
+__all__ = ["create_basic_agent"] 

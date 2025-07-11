@@ -7,10 +7,8 @@ Contains independent agent services that can be deployed separately:
 Each service is self-contained and can be deployed independently on LangGraph server.
 """
 
-from .basic import BasicAgent, BasicCoordinator, BasicService
+from .basic import create_basic_agent
 
 __all__ = [
-    "BasicAgent", 
-    "BasicCoordinator",
-    "BasicService"
+    "create_basic_agent"
 ] 
