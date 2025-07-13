@@ -24,7 +24,7 @@ def openai_node(state: Dict[str, Any]) -> Dict[str, Any]:
         api_key = state.get("api_key") or os.getenv("OPENAI_API_KEY")
         if not api_key:
             return {
-                "messages": state.get("messages", []),
+                "messages": state.get("messages") or [],
                 "error": "OpenAI API key not provided"
             }
         
@@ -39,12 +39,12 @@ def openai_node(state: Dict[str, Any]) -> Dict[str, Any]:
             max_tokens=max_tokens,
             api_key=api_key,
             organization=state.get("organization"),
-            streaming=state.get("stream", False),
-            **state.get("model_kwargs", {})
+            streaming=state.get("stream") or False,
+            **state.get("model_kwargs") or {}
         )
         
         # Prepare messages
-        messages = list(state.get("messages", []))
+        messages = list(state.get("messages") or [])
         
         # Add system prompt if provided
         system_prompt = state.get("system_prompt")
@@ -58,13 +58,13 @@ def openai_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Extract usage information if available
         usage = None
         if hasattr(response, 'response_metadata'):
-            usage = response.response_metadata.get('token_usage', None)
+            usage = response.response_metadata.get('token_usage') or None
         
         # Create AI message
         ai_message = AIMessage(content=response.content)
         
         return {
-            "messages": state.get("messages", []) + [ai_message],
+            "messages": (state.get("messages") or []) + [ai_message],
             "response": response.content,
             "usage": usage,
             "tokens_used": usage.get('total_tokens') if usage else None,
@@ -76,7 +76,7 @@ def openai_node(state: Dict[str, Any]) -> Dict[str, Any]:
         
     except Exception as e:
         return {
-            "messages": state.get("messages", []),
+            "messages": state.get("messages") or [],
             "error": f"OpenAI API error: {str(e)}",
             "finish_reason": "error"
         } 

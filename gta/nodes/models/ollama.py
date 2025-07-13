@@ -24,11 +24,11 @@ def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:
     
     try:
         # Get configuration from config
-        config_data = config.get("configurable", {})
+        config_data = config.get("configurable") or {}
         
-        base_url = config_data.get("base_url", "http://localhost:11434")
-        model_name = config_data.get("model_name", "qwen3:0.6b")
-        temperature = config_data.get("temperature", 0.7)
+        base_url = config_data.get("base_url") or "http://localhost:11434"
+        model_name = config_data.get("model_name") or "qwen3:0.6b"
+        temperature = config_data.get("temperature") or 0.7
         max_tokens = config_data.get("num_predict") or config_data.get("max_tokens")
         
         # Prepare Ollama options
@@ -51,7 +51,7 @@ def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:
             timeout=config_data.get("timeout"),
             keep_alive=config_data.get("keep_alive"),
             **options,
-            **config_data.get("model_kwargs", {})
+            **config_data.get("model_kwargs") or {}
         )
         
         # Prepare messages

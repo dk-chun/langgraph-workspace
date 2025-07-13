@@ -3,10 +3,10 @@ States package for LangGraph agents.
 Provides input/output schemas and state definitions.
 """
 
-from .messages import MessagesState
-from .models.base_llm import BaseLLMState
-from .models.openai import OpenAIState
-from .models.ollama import OllamaState
+from gta.states.messages import MessagesState
+from gta.states.models.base_llm import BaseLLMState
+from gta.states.models.openai import OpenAIState
+from gta.states.models.ollama import OllamaState
 
 __all__ = [
     "MessagesState",
