@@ -7,14 +7,14 @@ from unittest.mock import patch, Mock
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
-from my_agent.nodes.models.ollama import ollama_node
-from my_agent.states.messages import MessagesState
+from gta.nodes.models.ollama import ollama_node
+from gta.states.messages import MessagesState
 
 
 class TestOllamaNode:
     """Test cases for Ollama node."""
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_basic(self, mock_chat_ollama, empty_messages_state, runnable_config):
         """Test basic Ollama node functionality."""
         # Setup mock
@@ -38,7 +38,7 @@ class TestOllamaNode:
         assert call_args[1]["model"] == "qwen3:0.6b"
         assert call_args[1]["temperature"] == 0.7
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_with_existing_messages(self, mock_chat_ollama, sample_messages_state, runnable_config):
         """Test Ollama node with existing messages."""
         # Setup mock
@@ -62,7 +62,7 @@ class TestOllamaNode:
         assert call_args[1].content == "안녕하세요"
         assert call_args[2].content == "안녕하세요! 무엇을 도와드릴까요?"
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_with_system_prompt(self, mock_chat_ollama, empty_messages_state, basic_ollama_config):
         """Test Ollama node with system prompt."""
         # Setup mock
@@ -83,7 +83,7 @@ class TestOllamaNode:
         assert isinstance(call_args[0], SystemMessage)
         assert call_args[0].content == "You are a helpful assistant."
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_with_custom_options(self, mock_chat_ollama, empty_messages_state):
         """Test Ollama node with custom options."""
         # Setup mock
@@ -123,7 +123,7 @@ class TestOllamaNode:
         assert call_args[1]["top_p"] == 0.8
         assert call_args[1]["repeat_penalty"] == 1.2
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_with_minimal_config(self, mock_chat_ollama, empty_messages_state):
         """Test Ollama node with minimal configuration."""
         # Setup mock
@@ -144,7 +144,7 @@ class TestOllamaNode:
         assert call_args[1]["model"] == "qwen3:0.6b"  # default
         assert call_args[1]["temperature"] == 0.7  # default
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_with_model_kwargs(self, mock_chat_ollama, empty_messages_state):
         """Test Ollama node with additional model kwargs."""
         # Setup mock
@@ -170,7 +170,7 @@ class TestOllamaNode:
         assert call_args[1]["custom_param"] == "custom_value"
         assert call_args[1]["another_param"] == 42
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_ollama_node_error_handling(self, mock_chat_ollama, empty_messages_state, runnable_config):
         """Test Ollama node error handling."""
         # Setup mock to raise exception
@@ -194,7 +194,7 @@ class TestOllamaNode:
         config = RunnableConfig(configurable={})
         
         # This should work with default values
-        with patch('my_agent.nodes.models.ollama.ChatOllama') as mock_chat_ollama:
+        with patch('gta.nodes.models.ollama.ChatOllama') as mock_chat_ollama:
             mock_instance = Mock()
             mock_instance.invoke.return_value = Mock(content="빈 설정 응답")
             mock_chat_ollama.return_value = mock_instance

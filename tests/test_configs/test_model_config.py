@@ -5,7 +5,7 @@ Tests for model configuration schemas.
 import pytest
 from typing import get_type_hints
 
-from my_agent.configs.model_config import ModelConfig, OllamaConfig
+from gta.configs.model_config import ModelConfig, OllamaConfig
 
 
 class TestModelConfig:

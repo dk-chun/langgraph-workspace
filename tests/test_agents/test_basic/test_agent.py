@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import patch, Mock
 from langchain_core.messages import HumanMessage, AIMessage
 
-from my_agent.agents.basic import create_basic_agent
-from my_agent.states.messages import MessagesState
+from gta.agents.basic import create_basic_agent
+from gta.states.messages import MessagesState
 
 
 class TestBasicAgent:
@@ -35,7 +35,7 @@ class TestBasicAgent:
         assert ("__start__", "ollama") in edges
         assert ("ollama", "__end__") in edges
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_agent_invoke_basic(self, mock_chat_ollama, basic_ollama_config):
         """Test basic agent invocation with OllamaConfig."""
         # Setup mock
@@ -64,7 +64,7 @@ class TestBasicAgent:
         assert call_args[1]["model"] == "qwen3:0.6b"
         assert call_args[1]["temperature"] == 0.7
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_agent_invoke_with_system_prompt(self, mock_chat_ollama, basic_ollama_config):
         """Test agent invocation with system prompt."""
         # Setup mock
@@ -92,7 +92,7 @@ class TestBasicAgent:
         assert call_args[0].content == "You are a helpful assistant."
         assert call_args[1].content == "안녕하세요"
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_agent_invoke_with_minimal_config(self, mock_chat_ollama, minimal_ollama_config):
         """Test agent invocation with minimal configuration."""
         # Setup mock
@@ -119,7 +119,7 @@ class TestBasicAgent:
         assert call_args[1]["model"] == "qwen3:0.6b"  # default
         assert call_args[1]["temperature"] == 0.7  # default
 
-    @patch('my_agent.nodes.models.ollama.ChatOllama')
+    @patch('gta.nodes.models.ollama.ChatOllama')
     def test_agent_invoke_with_custom_options(self, mock_chat_ollama, basic_ollama_config):
         """Test agent invocation with custom Ollama options."""
         # Setup mock

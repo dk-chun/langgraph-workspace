@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 
-from my_agent.agents.basic import create_basic_agent
-from my_agent.states.messages import MessagesState
+from gta.agents.basic import create_basic_agent
+from gta.states.messages import MessagesState
 
 
 @pytest.fixture
