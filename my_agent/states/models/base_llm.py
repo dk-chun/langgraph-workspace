@@ -2,17 +2,22 @@
 Base LLM state definition.
 """
 
-from typing import Optional, Dict, Any
-from pydantic import Field
-from langgraph.graph import MessagesState
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, Field
+from langchain_core.messages import AnyMessage
 
 
-class BaseLLMState(MessagesState):
+class BaseLLMState(BaseModel):
     """
     Base state for LLM operations.
     
     Provides common fields for all LLM-based nodes.
     """
+    
+    messages: Optional[List[AnyMessage]] = Field(
+        default_factory=list,
+        description="List of messages in the conversation"
+    )
     
     model_name: Optional[str] = Field(
         default=None,

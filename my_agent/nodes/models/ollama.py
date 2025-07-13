@@ -1,46 +1,46 @@
 """
-Ollama node implementation.
+Ollama node implementation with runtime configuration.
 """
 
-import os
-from typing import Dict, Any
 from langchain_ollama import ChatOllama
 from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
+from my_agent.states.messages import MessagesState
 
 
-def ollama_node(state: Dict[str, Any]) -> Dict[str, Any]:
+def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:
     """
     Process messages using Ollama LLM.
     
+    Uses runtime configuration for all model settings.
+    
     Args:
-        state: Current Ollama state as dictionary
+        state: Current messages state
+        config: Runtime configuration with model settings
         
     Returns:
-        Updated state with AI response
+        Updated state dictionary with AI response
     """
     
     try:
-        # Get configuration from dictionary
-        base_url = state.get("base_url") or "http://localhost:11434"
-        model_name = state.get("model_name") or "qwen3:0.6b"
-        temperature = state.get("temperature") or 0.7
-        max_tokens = state.get("max_tokens") or state.get("num_predict")
+        # Get configuration from config
+        config_data = config.get("configurable", {})
+        
+        base_url = config_data.get("base_url", "http://localhost:11434")
+        model_name = config_data.get("model_name", "qwen3:0.6b")
+        temperature = config_data.get("temperature", 0.7)
+        max_tokens = config_data.get("num_predict") or config_data.get("max_tokens")
         
         # Prepare Ollama options
         options = {}
-        if state.get("num_ctx"):
-            options["num_ctx"] = state.get("num_ctx")
-        if state.get("num_predict"):
-            options["num_predict"] = state.get("num_predict")
-        if state.get("repeat_penalty"):
-            options["repeat_penalty"] = state.get("repeat_penalty")
-        if state.get("top_k"):
-            options["top_k"] = state.get("top_k")
-        if state.get("top_p"):
-            options["top_p"] = state.get("top_p")
-        
-        # Merge with additional options
-        options.update(state.get("options", {}))
+        if config_data.get("num_ctx"):
+            options["num_ctx"] = config_data.get("num_ctx")
+        if config_data.get("repeat_penalty"):
+            options["repeat_penalty"] = config_data.get("repeat_penalty")
+        if config_data.get("top_k"):
+            options["top_k"] = config_data.get("top_k")
+        if config_data.get("top_p"):
+            options["top_p"] = config_data.get("top_p")
         
         # Initialize Ollama client
         llm = ChatOllama(
@@ -48,18 +48,17 @@ def ollama_node(state: Dict[str, Any]) -> Dict[str, Any]:
             model=model_name,
             temperature=temperature,
             num_predict=max_tokens,
-            timeout=state.get("timeout"),
-            keep_alive=state.get("keep_alive"),
-            format=state.get("format"),
+            timeout=config_data.get("timeout"),
+            keep_alive=config_data.get("keep_alive"),
             **options,
-            **state.get("model_kwargs", {})
+            **config_data.get("model_kwargs", {})
         )
         
         # Prepare messages
-        messages = list(state.get("messages", []))
+        messages = list(state.messages)
         
         # Add system prompt if provided
-        system_prompt = state.get("system_prompt")
+        system_prompt = config_data.get("system_prompt")
         if system_prompt:
             system_message = SystemMessage(content=system_prompt)
             messages.insert(0, system_message)
@@ -71,18 +70,12 @@ def ollama_node(state: Dict[str, Any]) -> Dict[str, Any]:
         ai_message = AIMessage(content=response.content)
         
         return {
-            "messages": state.get("messages", []) + [ai_message],
-            "response": response.content,
-            "finish_reason": "stop",
-            "model_name": model_name,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "base_url": base_url
+            "messages": [ai_message]  # add_messages will append this
         }
         
     except Exception as e:
+        # Return error as AI message
+        error_message = AIMessage(content=f"죄송합니다. 오류가 발생했습니다: {str(e)}")
         return {
-            "messages": state.get("messages", []),
-            "error": f"Ollama API error: {str(e)}",
-            "finish_reason": "error"
+            "messages": [error_message]
         } 
