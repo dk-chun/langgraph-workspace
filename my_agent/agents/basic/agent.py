@@ -4,7 +4,6 @@ Uses MessagesState and config-based model settings.
 """
 
 from langgraph.graph import StateGraph, END, START
-from langgraph.checkpoint.memory import MemorySaver
 
 from my_agent.states.messages import MessagesState
 from my_agent.configs import OllamaConfig
@@ -32,4 +31,4 @@ def create_basic_agent():
     workflow.add_edge("ollama", END)
     
     # Compile with memory
-    return workflow.compile(checkpointer=MemorySaver())
+    return workflow.compile(name="basic_agent")

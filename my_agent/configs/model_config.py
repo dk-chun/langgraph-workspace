@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 from typing_extensions import TypedDict
 
 
-class ModelConfig(TypedDict, total=False):
+class ModelConfig(TypedDict):
     """
     Base model configuration schema.
     
@@ -20,7 +20,7 @@ class ModelConfig(TypedDict, total=False):
     model_kwargs: Optional[Dict[str, Any]]
 
 
-class OllamaConfig(ModelConfig, total=False):
+class OllamaConfig(ModelConfig):
     """
     Ollama-specific configuration schema.
     
