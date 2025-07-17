@@ -5,7 +5,7 @@ Ollama node implementation with runtime configuration.
 from langchain_ollama import ChatOllama
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
-from gta.states.messages import MessagesState
+from gta.states.messages_state import MessagesState
 
 
 def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:

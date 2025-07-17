@@ -5,7 +5,7 @@ Tests for MessagesState implementation.
 import pytest
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-from gta.states.messages import MessagesState
+from gta.states.messages_state import MessagesState
 
 
 class TestMessagesState:

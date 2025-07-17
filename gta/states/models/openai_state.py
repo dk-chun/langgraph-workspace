@@ -4,7 +4,7 @@ OpenAI-specific state definition.
 
 from typing import Optional, List
 from pydantic import Field
-from gta.states.models.base_llm import BaseLLMState
+from gta.states.models.base_llm_state import BaseLLMState
 
 
 class OpenAIState(BaseLLMState):

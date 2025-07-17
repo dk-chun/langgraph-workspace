@@ -5,7 +5,7 @@ Tests for model configuration schemas.
 import pytest
 from typing import get_type_hints
 
-from gta.configs.model_config import ModelConfig, OllamaConfig
+from gta.configs.models import BaseModelConfig, OllamaConfig
 
 
 class TestModelConfig:
@@ -14,13 +14,13 @@ class TestModelConfig:
     def test_model_config_structure(self):
         """Test ModelConfig structure."""
         # Test that ModelConfig has expected fields
-        config = ModelConfig()
+        config = BaseModelConfig()
         
         # Should be able to create empty config
         assert isinstance(config, dict)
         
         # Test with all fields
-        full_config = ModelConfig(
+        full_config = BaseModelConfig(
             model_name="test-model",
             temperature=0.8,
             max_tokens=500,
@@ -37,7 +37,7 @@ class TestModelConfig:
     def test_model_config_partial(self):
         """Test ModelConfig with partial fields."""
         # Should work with only some fields
-        partial_config = ModelConfig(
+        partial_config = BaseModelConfig(
             model_name="partial-model",
             temperature=0.5
         )
@@ -68,7 +68,6 @@ class TestOllamaConfig:
             
             # OllamaConfig specific fields
             base_url="http://localhost:11434",
-            timeout=30,
             keep_alive="5m",
             num_ctx=4096,
             num_predict=512,
@@ -81,7 +80,6 @@ class TestOllamaConfig:
         assert full_config["model_name"] == "qwen3:0.6b"
         assert full_config["temperature"] == 0.7
         assert full_config["base_url"] == "http://localhost:11434"
-        assert full_config["timeout"] == 30
         assert full_config["keep_alive"] == "5m"
         assert full_config["num_ctx"] == 4096
         assert full_config["num_predict"] == 512
@@ -105,18 +103,16 @@ class TestOllamaConfig:
         assert base_config["model_name"] == "test-model"
         assert base_config["base_url"] == "http://test:11434"
         assert "temperature" not in base_config
-        assert "timeout" not in base_config
+        assert "keep_alive" not in base_config
 
     def test_ollama_config_server_settings(self):
         """Test OllamaConfig server-specific settings."""
         server_config = OllamaConfig(
             base_url="http://custom-server:8080",
-            timeout=60,
             keep_alive="10m"
         )
         
         assert server_config["base_url"] == "http://custom-server:8080"
-        assert server_config["timeout"] == 60
         assert server_config["keep_alive"] == "10m"
 
     def test_ollama_config_generation_params(self):
@@ -168,7 +164,7 @@ class TestOllamaConfig:
     def test_config_type_annotations(self):
         """Test that configurations have proper type annotations."""
         # This is more of a static check, but we can verify the structure exists
-        model_hints = get_type_hints(ModelConfig)
+        model_hints = get_type_hints(BaseModelConfig)
         ollama_hints = get_type_hints(OllamaConfig)
         
         # ModelConfig should have basic fields
@@ -178,5 +174,5 @@ class TestOllamaConfig:
         
         # OllamaConfig should have additional fields
         assert 'base_url' in ollama_hints
-        assert 'timeout' in ollama_hints
+        assert 'keep_alive' in ollama_hints
         assert 'num_ctx' in ollama_hints 

@@ -4,7 +4,7 @@ Ollama-specific state definition.
 
 from typing import Optional, Dict, Any
 from pydantic import Field
-from gta.states.models.base_llm import BaseLLMState
+from gta.states.models.base_llm_state import BaseLLMState
 
 
 class OllamaState(BaseLLMState):

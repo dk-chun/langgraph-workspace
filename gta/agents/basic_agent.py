@@ -3,9 +3,9 @@
 from typing import Any
 from langgraph.graph import StateGraph, END, START
 
-from gta.states.messages import MessagesState
+from gta.states.messages_state import MessagesState
 from gta.configs import OllamaConfig
-from gta.nodes.models.ollama import ollama_node
+from gta.nodes.models.ollama_node import ollama_node
 
 
 def create_basic_agent() -> Any:  # returns CompiledStateGraph; not exported

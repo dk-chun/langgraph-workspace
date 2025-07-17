@@ -2,9 +2,10 @@
 Configuration schemas for LangGraph agents.
 """
 
-from gta.configs.model_config import ModelConfig, OllamaConfig
+from gta.configs.models import BaseModelConfig, OllamaConfig, OpenAIConfig
  
 __all__ = [
-    "ModelConfig",
-    "OllamaConfig"
+    "BaseModelConfig",
+    "OllamaConfig",
+    "OpenAIConfig"
 ] 
