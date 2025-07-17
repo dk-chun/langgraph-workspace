@@ -7,7 +7,7 @@ This package provides independent agent services that can be deployed separately
 Each service is designed to work independently and can be deployed on LangGraph server.
 """
 
-from gta.agents.basic import create_basic_agent
+from gta.agents.basic_agent import create_basic_agent
 
 # Service factories
 __all__ = [

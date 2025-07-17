@@ -26,29 +26,22 @@ def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:
         # Get configuration from config
         config_data = config.get("configurable") or {}
         
-        base_url = config_data.get("base_url") or "http://localhost:11434"
-        model_name = config_data.get("model_name") or "qwen3:0.6b"
-        temperature = config_data.get("temperature") or 0.7
-        max_tokens = config_data.get("num_predict") or config_data.get("max_tokens")
-        
-        # Prepare Ollama options
-        options = {}
-        if config_data.get("num_ctx"):
-            options["num_ctx"] = config_data.get("num_ctx")
-        if config_data.get("repeat_penalty"):
-            options["repeat_penalty"] = config_data.get("repeat_penalty")
-        if config_data.get("top_k"):
-            options["top_k"] = config_data.get("top_k")
-        if config_data.get("top_p"):
-            options["top_p"] = config_data.get("top_p")
+        # Prepare Ollama configuration
+        options = {
+            key: config_data.get(key) for key in [
+                "num_ctx",
+                "repeat_penalty",
+                "top_k",
+                "top_p"
+            ] if config_data.get(key) is not None
+        }
         
         # Initialize Ollama client
         llm = ChatOllama(
-            base_url=base_url,
-            model=model_name,
-            temperature=temperature,
-            num_predict=max_tokens,
-            timeout=config_data.get("timeout"),
+            base_url=config_data.get("base_url") or "http://localhost:11434",
+            model=config_data.get("model_name") or "qwen3:0.6b",
+            temperature=config_data.get("temperature") or 0.7,
+            num_predict=config_data.get("num_predict") or config_data.get("max_tokens"),
             keep_alive=config_data.get("keep_alive"),
             **options,
             **config_data.get("model_kwargs") or {}
@@ -58,10 +51,8 @@ def ollama_node(state: MessagesState, config: RunnableConfig) -> dict:
         messages = list(state.messages)
         
         # Add system prompt if provided
-        system_prompt = config_data.get("system_prompt")
-        if system_prompt:
-            system_message = SystemMessage(content=system_prompt)
-            messages.insert(0, system_message)
+        if system_prompt := config_data.get("system_prompt"):
+            messages.insert(0, SystemMessage(content=system_prompt))
         
         # Generate response
         response = llm.invoke(messages)

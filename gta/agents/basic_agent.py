@@ -1,8 +1,6 @@
-"""
-Basic agent implementation using LangGraph with runtime configuration.
-Uses MessagesState and config-based model settings.
-"""
+"""Basic agent implementation using LangGraph with runtime configuration."""
 
+from typing import Any
 from langgraph.graph import StateGraph, END, START
 
 from gta.states.messages import MessagesState
@@ -10,7 +8,7 @@ from gta.configs import OllamaConfig
 from gta.nodes.models.ollama import ollama_node
 
 
-def create_basic_agent():
+def create_basic_agent() -> Any:  # returns CompiledStateGraph; not exported
     """
     Create a basic conversational agent with runtime configuration.
     
@@ -31,4 +29,4 @@ def create_basic_agent():
     workflow.add_edge("ollama", END)
     
     # Compile with memory
-    return workflow.compile(name="basic_agent")
+    return workflow.compile(name="basic_agent") 

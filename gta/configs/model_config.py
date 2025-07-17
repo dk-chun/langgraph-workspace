@@ -29,7 +29,6 @@ class OllamaConfig(ModelConfig):
     
     # Server configuration
     base_url: Optional[str]
-    timeout: Optional[int]
     keep_alive: Optional[str]
     
     # Generation parameters

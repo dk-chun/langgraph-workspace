@@ -1,7 +1,4 @@
-"""
-States package for LangGraph agents.
-Provides input/output schemas and state definitions.
-"""
+"""States package for LangGraph agents. Provides input/output schemas and state definitions."""
 
 from gta.states.messages import MessagesState
 from gta.states.models.base_llm import BaseLLMState

@@ -7,7 +7,7 @@ Contains independent agent services that can be deployed separately:
 Each service is self-contained and can be deployed independently on LangGraph server.
 """
 
-from gta.agents.basic import create_basic_agent
+from gta.agents.basic_agent import create_basic_agent
 
 __all__ = [
     "create_basic_agent"
