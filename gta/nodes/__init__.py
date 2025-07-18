@@ -3,10 +3,11 @@ Nodes package for LangGraph agents.
 Provides node functions for graph execution.
 """
 
-from gta.nodes.models.openai_node import openai_node
-from gta.nodes.models.ollama_node import ollama_node
+# Note: Individual model nodes removed, using unified chat_node
+from gta.nodes.vectorstores.qdrant_node import qdrant_node
+from gta.nodes.chat_node import chat_node
 
 __all__ = [
-    "openai_node",
-    "ollama_node"
+    "qdrant_node",
+    "chat_node"
 ] 
