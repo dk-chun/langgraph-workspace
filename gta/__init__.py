@@ -1,23 +1,23 @@
 """
-My Agent Package - Modular LangGraph Agent Services
+GTA Package - Modular LangGraph Agent Services
 
-This package provides independent agent services that can be deployed separately:
-- Basic Agent: General purpose conversational service using runtime configuration
-- RAG Agent: Retrieval-Augmented Generation with Qdrant vector search
+This package provides independent agent services using functools.partial pattern:
+- Basic Agent: Simple conversational service
+- RAG Agent: Retrieval-Augmented Generation service
 
-Each service is designed to work independently and can be deployed on LangGraph server.
+Each service is designed with pure functions and adapter pattern for maximum reusability.
 """
 
-from gta.agents.basic_agent import create_basic_agent
-from gta.agents.rag_agent import create_rag_agent, create_simple_rag_agent
+from gta.agents import graph, create_basic_graph, graph, create_rag_graph
 
-# Service factories
+# Service graphs and factories
 __all__ = [
-    "create_basic_agent",
-    "create_rag_agent",
-    "create_simple_rag_agent"
+    "graph",
+    "create_basic_graph", 
+    "graph",
+    "create_rag_graph"
 ]
 
 # Version information
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 __author__ = "LangGraph Agent Services" 
