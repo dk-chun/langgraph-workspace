@@ -4,6 +4,7 @@ RAG Agent Graph Definition.
 
 from typing import List, Tuple, Optional
 from langgraph.graph import StateGraph, END, START
+from langgraph.graph.state import CompiledStateGraph
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_core.language_models import BaseChatModel
@@ -19,7 +20,7 @@ def create_rag_graph(
     vectorstore: Optional[VectorStore] = None,
     template_messages: Optional[List[Tuple[str, str]]] = None,
     top_k: int = 5
-):
+) -> CompiledStateGraph:
     """
     Create RAG graph with customizable components.
     

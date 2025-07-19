@@ -4,6 +4,7 @@ Basic Agent Graph Definition.
 
 from typing import Optional
 from langgraph.graph import StateGraph, END, START
+from langgraph.graph.state import CompiledStateGraph
 from langchain_ollama import ChatOllama
 from langchain_core.language_models import BaseChatModel
 
@@ -14,7 +15,7 @@ from gta.agents.basic.nodes import create_chat_node
 def create_basic_graph(
     llm: Optional[BaseChatModel] = None,
     system_prompt: Optional[str] = None
-):
+) -> CompiledStateGraph:
     """
     Create basic chat graph with customizable components.
     
