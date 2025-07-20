@@ -8,13 +8,13 @@ This package provides independent agent services using functools.partial pattern
 Each service is designed with pure functions and adapter pattern for maximum reusability.
 """
 
-from gta.agents import graph, create_basic_graph, graph, create_rag_graph
+from gta.agents import simple_rag_graph, create_basic_graph, simple_rag_graph, create_rag_graph
 
 # Service graphs and factories
 __all__ = [
-    "graph",
+    "simple_rag_graph",
     "create_basic_graph", 
-    "graph",
+    "simple_rag_graph",
     "create_rag_graph"
 ]
 

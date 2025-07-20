@@ -2,6 +2,6 @@
 Basic Chat Agent.
 """
 
-from gta.agents.basic.graph import graph, create_basic_graph
+from gta.agents.basic.graph import basic_graph, create_basic_graph
 
-__all__ = ["graph", "create_basic_graph"] 
+__all__ = ["basic_graph", "create_basic_graph"] 

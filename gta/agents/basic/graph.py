@@ -53,4 +53,4 @@ def create_basic_graph(
 
 
 # Create default graph instance for backward compatibility
-graph = create_basic_graph() 
+basic_graph = create_basic_graph() 

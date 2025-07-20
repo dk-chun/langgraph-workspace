@@ -10,7 +10,7 @@ from gta.agents.multi_rag.graph import (
     create_multi_rag_graph, 
     create_multi_rag_graph_with_individual_nodes,
     create_conditional_multi_rag_example,
-    graph,
+    multi_rag_graph,
     legacy_graph
 )
 from gta.agents.multi_rag.state import MultiRAGState
@@ -19,7 +19,7 @@ __all__ = [
     "create_multi_rag_graph", 
     "create_multi_rag_graph_with_individual_nodes",
     "create_conditional_multi_rag_example",
-    "graph", 
+    "multi_rag_graph", 
     "legacy_graph",
     "MultiRAGState"
 ] 

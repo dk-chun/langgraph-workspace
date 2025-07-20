@@ -85,4 +85,4 @@ def create_rag_graph(
 
 
 # Create default graph instance for backward compatibility
-graph = create_rag_graph() 
+simple_rag_graph = create_rag_graph() 

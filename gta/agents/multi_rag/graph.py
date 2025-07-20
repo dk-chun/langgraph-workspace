@@ -251,7 +251,7 @@ def create_multi_rag_graph_with_individual_nodes(
 legacy_graph = create_multi_rag_graph() 
 
 # New individual nodes approach (recommended)
-graph = create_multi_rag_graph_with_individual_nodes()
+multi_rag_graph = create_multi_rag_graph_with_individual_nodes()
 
 
 # Example usage and utility functions
