@@ -1,5 +1,5 @@
 """
-Multi-VectorStore RAG Agent Nodes.
+Multi-VectorStore RAG Agent Nodes with Runtime Configuration.
 """
 
 import functools
@@ -8,8 +8,26 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.language_models import BaseChatModel
 from langchain_core.vectorstores import VectorStore
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig
 
 from gta.agents.multi_rag.state import MultiRAGState
+from gta.agents.multi_rag.config import DEFAULT_MULTI_RAG_CONFIG
+from gta.core.factories import create_llm, create_vectorstore
+
+
+def _get_runtime_config(config: RunnableConfig) -> Dict[str, Any]:
+    """Get runtime configuration with fallback to defaults."""
+    if not config or "configurable" not in config:
+        return DEFAULT_MULTI_RAG_CONFIG
+    
+    runtime_config = config["configurable"]
+    
+    # Merge with defaults for missing keys
+    merged_config = {}
+    merged_config.update(DEFAULT_MULTI_RAG_CONFIG)
+    merged_config.update(runtime_config)
+    
+    return merged_config
 
 
 def extract_query_node(state: MultiRAGState) -> Dict[str, Any]:
@@ -24,40 +42,39 @@ def extract_query_node(state: MultiRAGState) -> Dict[str, Any]:
     return {"question": question}
 
 
-def parallel_search_node(
+def individual_vectorstore_search_node(
     state: MultiRAGState, 
-    vectorstores: List[VectorStore], 
-    top_k: int = 3
+    config: RunnableConfig,
+    store_index: int
 ) -> Dict[str, Any]:
-    """Search all vectorstores in parallel."""
+    """Individual vectorstore search node using runtime configuration."""
     query = state.question
     if not query:
-        return {
-            "vs1_documents": [],
-            "vs2_documents": [],
-            "vs3_documents": [],
-            "search_scores": {}
-        }
+        store_id = f"vs{store_index + 1}"
+        return {f"{store_id}_documents": []}
     
-    # Search each vectorstore
-    vs1_results = vectorstores[0].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 0 else []
-    vs2_results = vectorstores[1].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 1 else []
-    vs3_results = vectorstores[2].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 2 else []
+    # Get configuration with defaults
+    runtime_config = _get_runtime_config(config)
+    vs_configs = runtime_config["vectorstores"]
+    top_k = runtime_config.get("top_k_per_store", 3)
     
-    # Calculate search quality scores (average similarity scores)
-    search_scores = {}
-    if vs1_results:
-        search_scores["vs1"] = sum(score for _, score in vs1_results) / len(vs1_results)
-    if vs2_results:
-        search_scores["vs2"] = sum(score for _, score in vs2_results) / len(vs2_results)
-    if vs3_results:
-        search_scores["vs3"] = sum(score for _, score in vs3_results) / len(vs3_results)
+    # Create specific vectorstore
+    if store_index >= len(vs_configs):
+        store_id = f"vs{store_index + 1}"
+        return {f"{store_id}_documents": []}
     
+    vectorstore = create_vectorstore(vs_configs[store_index])
+    results = vectorstore.similarity_search_with_score(query, k=top_k)
+    
+    # Calculate search quality score
+    search_score = 0.0
+    if results:
+        search_score = sum(score for _, score in results) / len(results)
+    
+    store_id = f"vs{store_index + 1}"
     return {
-        "vs1_documents": vs1_results,
-        "vs2_documents": vs2_results,
-        "vs3_documents": vs3_results,
-        "search_scores": search_scores
+        f"{store_id}_documents": results,
+        "search_scores": {store_id: search_score}
     }
 
 
@@ -108,15 +125,16 @@ def _format_search_results(results: List[Tuple[Any, float]]) -> str:
     return "\n\n".join(context_parts)
 
 
-def merge_results_node(
-    state: MultiRAGState, 
-    strategy: str = "simple", 
-    final_top_k: int = 5
-) -> Dict[str, Any]:
-    """Merge results from all vectorstores."""
+def merge_results_node(state: MultiRAGState, config: RunnableConfig) -> Dict[str, Any]:
+    """Merge results from all vectorstores using runtime configuration."""
     vs1_results = state.vs1_documents
     vs2_results = state.vs2_documents
     vs3_results = state.vs3_documents
+    
+    # Get configuration with defaults
+    runtime_config = _get_runtime_config(config)
+    strategy = runtime_config.get("merge_strategy", "simple")
+    final_top_k = runtime_config.get("final_top_k", 5)
     
     if strategy == "simple":
         # Normalize scores for each vectorstore
@@ -150,12 +168,19 @@ def merge_results_node(
     }
 
 
-def prompt_node(state: MultiRAGState, template_messages: List[Tuple[str, str]]) -> Dict[str, Any]:
-    """Format prompt with merged context and question."""
+def prompt_node(state: MultiRAGState, config: RunnableConfig) -> Dict[str, Any]:
+    """Format prompt with merged context and question using runtime configuration."""
     variables = {
         "context": state.final_context,
         "question": state.question
     }
+    
+    # Get configuration with defaults
+    runtime_config = _get_runtime_config(config)
+    template_messages = runtime_config.get("template_messages", [
+        ("system", "You are a helpful assistant. Use the following context from multiple sources to answer the user's question accurately and concisely."),
+        ("user", "Context from multiple sources:\n{context}\n\nQuestion: {question}\n\nAnswer:")
+    ])
     
     # Format prompt template
     chat_template = ChatPromptTemplate(template_messages)
@@ -165,70 +190,18 @@ def prompt_node(state: MultiRAGState, template_messages: List[Tuple[str, str]]) 
     return {"messages": messages}
 
 
-def chat_node(state: MultiRAGState, llm: BaseChatModel) -> Dict[str, Any]:
-    """Generate response using LLM."""
+def chat_node(state: MultiRAGState, config: RunnableConfig) -> Dict[str, Any]:
+    """Generate response using LLM from runtime configuration."""
     messages = state.messages
+    
+    # Get configuration with defaults
+    runtime_config = _get_runtime_config(config)
+    llm_config = runtime_config["llm"]
+    llm = create_llm(llm_config)
+    
     response = llm.invoke(messages)
     
     return {"messages": [AIMessage(content=response.content)]}
-
-
-def individual_vectorstore_search_node(
-    state: MultiRAGState, 
-    vectorstore: VectorStore, 
-    store_id: str, 
-    top_k: int = 3
-) -> Dict[str, Any]:
-    """Individual vectorstore search node."""
-    query = state.question
-    if not query:
-        return {f"{store_id}_documents": []}
-    
-    results = vectorstore.similarity_search_with_score(query, k=top_k)
-    
-    # Calculate search quality score
-    search_score = 0.0
-    if results:
-        search_score = sum(score for _, score in results) / len(results)
-    
-    return {
-        f"{store_id}_documents": results,
-        "search_scores": {store_id: search_score}
-    }
-
-
-def conditional_vectorstore_search_node(
-    state: MultiRAGState,
-    vectorstore: VectorStore,
-    store_id: str,
-    condition_fn: Callable[[MultiRAGState], bool],
-    top_k: int = 3
-) -> Dict[str, Any]:
-    """Conditional vectorstore search node that only searches if condition is met."""
-    if not condition_fn(state):
-        return {
-            f"{store_id}_documents": [],
-            "search_scores": {store_id: 0.0}
-        }
-    
-    query = state.question
-    if not query:
-        return {
-            f"{store_id}_documents": [],
-            "search_scores": {store_id: 0.0}
-        }
-    
-    results = vectorstore.similarity_search_with_score(query, k=top_k)
-    
-    # Calculate search quality score
-    search_score = 0.0
-    if results:
-        search_score = sum(score for _, score in results) / len(results)
-    
-    return {
-        f"{store_id}_documents": results,
-        "search_scores": {store_id: search_score}
-    }
 
 
 # Node factory functions
@@ -237,40 +210,21 @@ def create_extract_query_node() -> Callable[[MultiRAGState], Dict[str, Any]]:
     return extract_query_node
 
 
-def create_vectorstore_search_node(
-    vectorstore: VectorStore, 
-    store_id: str, 
-    top_k: int = 3
-) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create individual vectorstore search node."""
-    return functools.partial(individual_vectorstore_search_node, vectorstore=vectorstore, store_id=store_id, top_k=top_k)
+def create_individual_search_node_with_config(store_index: int) -> Callable[[MultiRAGState, RunnableConfig], Dict[str, Any]]:
+    """Create individual vectorstore search node that uses runtime configuration."""
+    return functools.partial(individual_vectorstore_search_node, store_index=store_index)
 
 
-def create_conditional_search_node(
-    vectorstore: VectorStore,
-    store_id: str,
-    condition_fn: Callable[[MultiRAGState], bool],
-    top_k: int = 3
-) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create conditional vectorstore search node that only searches if condition is met."""
-    return functools.partial(conditional_vectorstore_search_node, vectorstore=vectorstore, store_id=store_id, condition_fn=condition_fn, top_k=top_k)
+def create_merge_results_node_with_config() -> Callable[[MultiRAGState, RunnableConfig], Dict[str, Any]]:
+    """Create results merging node that uses runtime configuration."""
+    return merge_results_node
 
 
-def create_parallel_search_node(vectorstores: List[VectorStore], top_k: int = 3) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create parallel search node for multiple vectorstores."""
-    return functools.partial(parallel_search_node, vectorstores=vectorstores, top_k=top_k)
+def create_prompt_node_with_config() -> Callable[[MultiRAGState, RunnableConfig], Dict[str, Any]]:
+    """Create prompt formatting node that uses runtime configuration."""
+    return prompt_node
 
 
-def create_merge_results_node(strategy: str = "simple", final_top_k: int = 5) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create results merging node."""
-    return functools.partial(merge_results_node, strategy=strategy, final_top_k=final_top_k)
-
-
-def create_prompt_node(template_messages: List[Tuple[str, str]]) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create prompt formatting node."""
-    return functools.partial(prompt_node, template_messages=template_messages)
-
-
-def create_chat_node(llm: BaseChatModel) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """Create chat node with LLM."""
-    return functools.partial(chat_node, llm=llm) 
+def create_chat_node_with_config() -> Callable[[MultiRAGState, RunnableConfig], Dict[str, Any]]:
+    """Create chat node that uses runtime configuration."""
+    return chat_node 
