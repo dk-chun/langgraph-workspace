@@ -7,14 +7,12 @@ from typing import Dict, Any, List, Tuple, Callable
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.language_models import BaseChatModel
 from langchain_core.vectorstores import VectorStore
+from langchain_core.prompts import ChatPromptTemplate
 
-from gta.core.chat import invoke_llm
-from gta.core.vectorstore import search_documents, format_search_results
-from gta.core.prompt import format_prompt_template
 from gta.agents.multi_rag.state import MultiRAGState
 
 
-def _extract_query_adapter(state: MultiRAGState) -> Dict[str, Any]:
+def extract_query_node(state: MultiRAGState) -> Dict[str, Any]:
     """Extract query from messages for search."""
     question = ""
     if state.messages:
@@ -26,7 +24,7 @@ def _extract_query_adapter(state: MultiRAGState) -> Dict[str, Any]:
     return {"question": question}
 
 
-def _parallel_search_adapter(
+def parallel_search_node(
     state: MultiRAGState, 
     vectorstores: List[VectorStore], 
     top_k: int = 3
@@ -42,9 +40,9 @@ def _parallel_search_adapter(
         }
     
     # Search each vectorstore
-    vs1_results = search_documents(query, vectorstores[0], top_k) if len(vectorstores) > 0 else []
-    vs2_results = search_documents(query, vectorstores[1], top_k) if len(vectorstores) > 1 else []
-    vs3_results = search_documents(query, vectorstores[2], top_k) if len(vectorstores) > 2 else []
+    vs1_results = vectorstores[0].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 0 else []
+    vs2_results = vectorstores[1].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 1 else []
+    vs3_results = vectorstores[2].similarity_search_with_score(query, k=top_k) if len(vectorstores) > 2 else []
     
     # Calculate search quality scores (average similarity scores)
     search_scores = {}
@@ -98,7 +96,19 @@ def _remove_duplicates(results: List[Tuple[Any, float]]) -> List[Tuple[Any, floa
     return unique_results
 
 
-def _merge_results_adapter(
+def _format_search_results(results: List[Tuple[Any, float]]) -> str:
+    """Format search results into context string."""
+    if not results:
+        return "No relevant documents found."
+    
+    context_parts = []
+    for i, (doc, score) in enumerate(results):
+        context_parts.append(f"[Document {i+1}] (Score: {score:.3f})\n{doc.page_content}")
+    
+    return "\n\n".join(context_parts)
+
+
+def merge_results_node(
     state: MultiRAGState, 
     strategy: str = "simple", 
     final_top_k: int = 5
@@ -131,7 +141,7 @@ def _merge_results_adapter(
         merged_documents = []
     
     # Format final context
-    final_context = format_search_results(merged_documents)
+    final_context = _format_search_results(merged_documents)
     
     return {
         "merged_documents": merged_documents,
@@ -140,30 +150,91 @@ def _merge_results_adapter(
     }
 
 
-def _prompt_adapter(state: MultiRAGState, template_messages: List[Tuple[str, str]]) -> Dict[str, Any]:
+def prompt_node(state: MultiRAGState, template_messages: List[Tuple[str, str]]) -> Dict[str, Any]:
     """Format prompt with merged context and question."""
     variables = {
         "context": state.final_context,
         "question": state.question
     }
     
-    messages = format_prompt_template(template_messages, variables)
+    # Format prompt template
+    chat_template = ChatPromptTemplate(template_messages)
+    prompt_value = chat_template.invoke(variables)
+    messages = prompt_value.to_messages()
     
     return {"messages": messages}
 
 
-def _chat_adapter(state: MultiRAGState, llm: BaseChatModel) -> Dict[str, Any]:
+def chat_node(state: MultiRAGState, llm: BaseChatModel) -> Dict[str, Any]:
     """Generate response using LLM."""
     messages = state.messages
-    response_content = invoke_llm(messages, llm)
+    response = llm.invoke(messages)
     
-    return {"messages": [AIMessage(content=response_content)]}
+    return {"messages": [AIMessage(content=response.content)]}
+
+
+def individual_vectorstore_search_node(
+    state: MultiRAGState, 
+    vectorstore: VectorStore, 
+    store_id: str, 
+    top_k: int = 3
+) -> Dict[str, Any]:
+    """Individual vectorstore search node."""
+    query = state.question
+    if not query:
+        return {f"{store_id}_documents": []}
+    
+    results = vectorstore.similarity_search_with_score(query, k=top_k)
+    
+    # Calculate search quality score
+    search_score = 0.0
+    if results:
+        search_score = sum(score for _, score in results) / len(results)
+    
+    return {
+        f"{store_id}_documents": results,
+        "search_scores": {store_id: search_score}
+    }
+
+
+def conditional_vectorstore_search_node(
+    state: MultiRAGState,
+    vectorstore: VectorStore,
+    store_id: str,
+    condition_fn: Callable[[MultiRAGState], bool],
+    top_k: int = 3
+) -> Dict[str, Any]:
+    """Conditional vectorstore search node that only searches if condition is met."""
+    if not condition_fn(state):
+        return {
+            f"{store_id}_documents": [],
+            "search_scores": {store_id: 0.0}
+        }
+    
+    query = state.question
+    if not query:
+        return {
+            f"{store_id}_documents": [],
+            "search_scores": {store_id: 0.0}
+        }
+    
+    results = vectorstore.similarity_search_with_score(query, k=top_k)
+    
+    # Calculate search quality score
+    search_score = 0.0
+    if results:
+        search_score = sum(score for _, score in results) / len(results)
+    
+    return {
+        f"{store_id}_documents": results,
+        "search_scores": {store_id: search_score}
+    }
 
 
 # Node factory functions
 def create_extract_query_node() -> Callable[[MultiRAGState], Dict[str, Any]]:
     """Create query extraction node."""
-    return _extract_query_adapter
+    return extract_query_node
 
 
 def create_vectorstore_search_node(
@@ -171,35 +242,8 @@ def create_vectorstore_search_node(
     store_id: str, 
     top_k: int = 3
 ) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """
-    Create individual vectorstore search node.
-    
-    Args:
-        vectorstore: VectorStore instance to search
-        store_id: Identifier for the vectorstore (vs1, vs2, vs3)
-        top_k: Number of documents to retrieve
-        
-    Returns:
-        Node function for individual vectorstore search
-    """
-    def _individual_search_adapter(state: MultiRAGState) -> Dict[str, Any]:
-        query = state.question
-        if not query:
-            return {f"{store_id}_documents": []}
-        
-        results = search_documents(query, vectorstore, top_k)
-        
-        # Calculate search quality score
-        search_score = 0.0
-        if results:
-            search_score = sum(score for _, score in results) / len(results)
-        
-        return {
-            f"{store_id}_documents": results,
-            "search_scores": {store_id: search_score}
-        }
-    
-    return _individual_search_adapter
+    """Create individual vectorstore search node."""
+    return functools.partial(individual_vectorstore_search_node, vectorstore=vectorstore, store_id=store_id, top_k=top_k)
 
 
 def create_conditional_search_node(
@@ -208,62 +252,25 @@ def create_conditional_search_node(
     condition_fn: Callable[[MultiRAGState], bool],
     top_k: int = 3
 ) -> Callable[[MultiRAGState], Dict[str, Any]]:
-    """
-    Create conditional vectorstore search node that only searches if condition is met.
-    
-    Args:
-        vectorstore: VectorStore instance to search
-        store_id: Identifier for the vectorstore
-        condition_fn: Function that returns True if search should be performed
-        top_k: Number of documents to retrieve
-        
-    Returns:
-        Node function for conditional vectorstore search
-    """
-    def _conditional_search_adapter(state: MultiRAGState) -> Dict[str, Any]:
-        if not condition_fn(state):
-            return {
-                f"{store_id}_documents": [],
-                "search_scores": {store_id: 0.0}
-            }
-        
-        query = state.question
-        if not query:
-            return {
-                f"{store_id}_documents": [],
-                "search_scores": {store_id: 0.0}
-            }
-        
-        results = search_documents(query, vectorstore, top_k)
-        
-        # Calculate search quality score
-        search_score = 0.0
-        if results:
-            search_score = sum(score for _, score in results) / len(results)
-        
-        return {
-            f"{store_id}_documents": results,
-            "search_scores": {store_id: search_score}
-        }
-    
-    return _conditional_search_adapter
+    """Create conditional vectorstore search node that only searches if condition is met."""
+    return functools.partial(conditional_vectorstore_search_node, vectorstore=vectorstore, store_id=store_id, condition_fn=condition_fn, top_k=top_k)
 
 
 def create_parallel_search_node(vectorstores: List[VectorStore], top_k: int = 3) -> Callable[[MultiRAGState], Dict[str, Any]]:
     """Create parallel search node for multiple vectorstores."""
-    return functools.partial(_parallel_search_adapter, vectorstores=vectorstores, top_k=top_k)
+    return functools.partial(parallel_search_node, vectorstores=vectorstores, top_k=top_k)
 
 
 def create_merge_results_node(strategy: str = "simple", final_top_k: int = 5) -> Callable[[MultiRAGState], Dict[str, Any]]:
     """Create results merging node."""
-    return functools.partial(_merge_results_adapter, strategy=strategy, final_top_k=final_top_k)
+    return functools.partial(merge_results_node, strategy=strategy, final_top_k=final_top_k)
 
 
 def create_prompt_node(template_messages: List[Tuple[str, str]]) -> Callable[[MultiRAGState], Dict[str, Any]]:
     """Create prompt formatting node."""
-    return functools.partial(_prompt_adapter, template_messages=template_messages)
+    return functools.partial(prompt_node, template_messages=template_messages)
 
 
 def create_chat_node(llm: BaseChatModel) -> Callable[[MultiRAGState], Dict[str, Any]]:
     """Create chat node with LLM."""
-    return functools.partial(_chat_adapter, llm=llm) 
+    return functools.partial(chat_node, llm=llm) 
